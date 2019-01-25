@@ -1,0 +1,47 @@
+version: '2'
+services:
+  selenoid:
+    restart: always
+    image: aerokube/selenoid:latest-release
+    #    network_mode: bridge
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./config:/etc/selenoid:ro
+    ports:
+      - 4444:4444
+    container_name: selenoid
+    command: ["-container-network", "dockertest_allurenet"]
+    networks:
+      - allurenet
+
+  selenoid-ui:
+    restart: always
+    image: aerokube/selenoid-ui
+    #    network_mode: bridge
+    ports:
+      - 4445:8080
+    #    links:
+    #      - selenoid
+    container_name: selenoid-ui
+    command: ["--selenoid-uri", "http://selenoid:4444"]
+    networks:
+      - allurenet
+
+  allure-report:
+    restart: always
+    image: nginx
+    volumes:
+      - /data/allure/allure-report:/usr/share/nginx/html:ro
+    ports:
+      - 8000:80
+    container_name: allure-report
+    networks:
+      - allurenet
+
+networks:
+  allurenet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
